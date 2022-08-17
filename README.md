@@ -37,7 +37,7 @@ App repository can be found [here](https://github.com/Swagnarok630/Employee_Mana
     * Can update an employee's role
     * Can update an employee's manager
     
-![App in action](notedefault.gif)
+![App in action](employdefault.gif)
 
 ## <a name="installation"></a>Installation Instructions
 
