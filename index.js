@@ -1,6 +1,7 @@
 const connection = require("./config/connection")
 const inquirer = require("inquirer")
 
+// Beginning of app
 function start() {
     console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     console.log("|                                                 |")
@@ -12,6 +13,7 @@ function start() {
     userPrompt();
 }
 
+// Function with inquirer to prompt user for selections
 function userPrompt() {
     inquirer.prompt({
         type: "list",
@@ -21,10 +23,13 @@ function userPrompt() {
             "View All Departments",
             "View All Roles",
             "View All Employees",
+            // "View Employees By Department",
+            // "View Employees By Manager",
             "Add A Department",
             "Add A Role",
             "Add An Employee",
-            "Update An Employee Role",
+            "Update An Employee's Role",
+            "Update An Employee's Manager",
             "Delete A Department",
             "Delete A Role",
             "Delete An Employee",
@@ -38,14 +43,20 @@ function userPrompt() {
             return viewRoles();
             case "View All Employees":
             return viewEmployees();
+            // case "View Employees By Department":
+            // return viewEmployeesDept();
+            // case "View Employees By Manager":
+            // return viewEmployeesManager();
             case "Add A Department":
             return addDept();
             case "Add A Role":
             return addRole();
             case "Add An Employee":
             return addEmployee();
-            case "Update An Employee Role":
+            case "Update An Employee's Role":
             return updateEmployee();
+            case "Update An Employee's Manager":
+            return updateEmployeeManager();
             case "Delete A Department":
             return deleteDept();
             case "Delete A Role":
@@ -59,24 +70,60 @@ function userPrompt() {
     })
 }
 
+// Function to view all departments
 async function viewDepts() {
     const view = await connection.query(`SELECT * FROM department`)
     console.table(view)
     setTimeout(userPrompt, 1500)
 }
 
+// Function to view all roles
 async function viewRoles() {
     const view = await connection.query(`SELECT * FROM role`)
     console.table(view)
     setTimeout(userPrompt, 1500)
 }
 
+// Function to view all employees
 async function viewEmployees() {
     const view = await connection.query(`SELECT * FROM employee`)
     console.table(view)
     setTimeout(userPrompt, 1500)
 }
 
+// Function to view employees by department (cannot get table to view properly)
+// async function viewEmployeesDept() {
+//     const view = await connection.query(`SELECT * FROM department`)
+//     const viewList = view.map(dept => {
+//         return {
+//             name: dept.name,
+//             value: dept.id
+//         }
+//     })
+//     await inquirer.prompt({
+//         type: "list",
+//         name: "byDept",
+//         message: "Select a department to view its employees",
+//         choices: viewList
+//     }).then((answer) => {
+//         console.log(answer)
+//         console.table(
+//         connection.query(`SELECT *
+//         FROM employee INNER JOIN role ON employee.role_id = role.id
+//         INNER JOIN department ON role.department_id = department.id
+//         WHERE department.id = ${answer.byDept}`))
+//         return setTimeout(userPrompt, 1500)
+//     })
+// }
+
+// Function to view employees by manager (incomplete)
+// async function viewEmployees() {
+//     const view = await connection.query(`SELECT id FROM employee WHERE (id IN (SELECT manager_id FROM employee))`)
+//     console.table(view)
+//     setTimeout(userPrompt, 1500)
+// }
+
+// Function to add a department to the database
 async function addDept() {
     inquirer.prompt({
         type: "input",
@@ -89,6 +136,7 @@ async function addDept() {
     })
 }
 
+// Function to add a role to the database
 async function addRole() {
     const department = await connection.query(`SELECT * FROM department`)
     const departmentList = department.map(dept => {
@@ -121,6 +169,7 @@ async function addRole() {
     })
 }
 
+// Function to add an employee to the database
 async function addEmployee() {
     const role = await connection.query(`SELECT * FROM role`)
     const roleList = role.map(roleInfo => {
@@ -166,6 +215,7 @@ async function addEmployee() {
     })
 }
 
+// Function to update an employee's role in the database
 async function updateEmployee() {
     const employee = await connection.query(`SELECT * FROM employee`)
     const employeeList = employee.map(employeeInfo => {
@@ -201,6 +251,43 @@ async function updateEmployee() {
     })
 }
 
+// Function to update an employee's manager in the database
+async function updateEmployeeManager() {
+    const employee = await connection.query(`SELECT * FROM employee`)
+    const employeeList = employee.map(employeeInfo => {
+        return {
+            name: `${employeeInfo.first_name} ${employeeInfo.last_name}`,
+            value: employeeInfo.id
+        }
+    })
+    const manager = await connection.query(`SELECT * FROM employee`)
+    const managerList = manager.map(managerInfo => {
+        return {
+            name: `${managerInfo.first_name} ${managerInfo.last_name}`,
+            value: managerInfo.id
+        }
+    })
+    inquirer.prompt([
+        {
+            type: "list",
+            name: "employee",
+            message: "Select an employee to update",
+            choices: employeeList
+        },
+        {
+            type: "list",
+            name: "manager",
+            message: "Select a new manager to update to",
+            choices: managerList
+        },
+    ]).then((answer) => {
+        connection.query(`UPDATE employee SET manager_id = ? WHERE id = ?`, [answer.manager, answer.employee])
+        console.log(`Employee's manager has been updated!`)
+        return setTimeout(userPrompt, 1500)
+    })
+}
+
+// Function to delete a department from the database
 async function deleteDept() {
     const department = await connection.query(`SELECT * FROM department`)
     const departmentList = department.map(dept => {
@@ -221,6 +308,7 @@ async function deleteDept() {
     })
 }
 
+// Funtion to delete a role in the database
 async function deleteRole() {
     const role = await connection.query(`SELECT * FROM role`)
     const roleList = role.map(roleInfo => {
@@ -241,6 +329,7 @@ async function deleteRole() {
     })
 }
 
+// Function to delete an employee from the database
 async function deleteEmployee() {
     const employee = await connection.query(`SELECT * FROM employee`)
     const employeeList = employee.map(employeeInfo => {
