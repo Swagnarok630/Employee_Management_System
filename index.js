@@ -24,7 +24,11 @@ function userPrompt() {
             "Add A Department",
             "Add A Role",
             "Add An Employee",
-            "Update An Employee Role"
+            "Update An Employee Role",
+            "Delete A Department",
+            "Delete A Role",
+            "Delete An Employee",
+            "Exit Employee Management System"
         ]
     }).then(answer => {
         switch(answer.initialChoice) {
@@ -42,27 +46,38 @@ function userPrompt() {
             return addEmployee();
             case "Update An Employee Role":
             return updateEmployee();
+            case "Delete A Department":
+            return deleteDept();
+            case "Delete A Role":
+            return deleteRole();
+            case "Delete An Employee":
+            return deleteEmployee();
+        case "Exit Employee Management System":
+            return process.exit();
             default:
         }
     })
 }
 
-function viewDepts() {
-    const view = connection.query(`SELECT * FROM department`)
+async function viewDepts() {
+    const view = await connection.query(`SELECT * FROM department`)
     console.table(view)
+    setTimeout(userPrompt, 1500)
 }
 
-function viewRoles() {
-    const view = connection.query(`SELECT * FROM role`)
+async function viewRoles() {
+    const view = await connection.query(`SELECT * FROM role`)
     console.table(view)
+    setTimeout(userPrompt, 1500)
 }
 
-function viewEmployees() {
-    const view = connection.query(`SELECT * FROM employee`)
+async function viewEmployees() {
+    const view = await connection.query(`SELECT * FROM employee`)
     console.table(view)
+    setTimeout(userPrompt, 1500)
 }
 
-function addDept() {
+async function addDept() {
     inquirer.prompt({
         type: "input",
         name: "newDept",
@@ -70,11 +85,12 @@ function addDept() {
     }).then((answer) => {
         connection.query(`INSERT INTO department (name) VALUES ("${answer.newDept}")`)
         console.log(`${answer.newDept} added as a new department!`)
+        return setTimeout(userPrompt, 1500)
     })
 }
 
-function addRole() {
-    const [department] = connection.query(`SELECT * FROM department`)
+async function addRole() {
+    const department = await connection.query(`SELECT * FROM department`)
     const departmentList = department.map(dept => {
         return {
             name: dept.name,
@@ -101,18 +117,19 @@ function addRole() {
     ]).then((answer) => {
         connection.query(`INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`, [answer.newRole, answer.newRoleSalary, answer.deptName])
         console.log(`${answer.newRole} added as a new role!`)
+        return setTimeout(userPrompt, 1500)
     })
 }
 
-function addEmployee() {
-    const [role] = connection.query(`SELECT * FROM role`)
+async function addEmployee() {
+    const role = await connection.query(`SELECT * FROM role`)
     const roleList = role.map(roleInfo => {
         return {
             name: roleInfo.title,
             value: roleInfo.id
         }
     })
-    const [manager] = connection.query(`SELECT * FROM employee`)
+    const manager = await connection.query(`SELECT * FROM employee`)
     const managerList = manager.map(managerInfo => {
         return {
             name: `${managerInfo.first_name} ${managerInfo.last_name}`,
@@ -145,18 +162,19 @@ function addEmployee() {
     ]).then((answer) => {
         connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)`, [answer.firstName, answer.lastName, answer.assignRole, answer.assignManager])
         console.log(`${answer.firstName} ${answer.lastName} added as a new employee!`)
+        return setTimeout(userPrompt, 1500)
     })
 }
 
-function updateEmployee() {
-    const [employee] = connection.query(`SELECT * FROM employee`)
+async function updateEmployee() {
+    const employee = await connection.query(`SELECT * FROM employee`)
     const employeeList = employee.map(employeeInfo => {
         return {
             name: `${employeeInfo.first_name} ${employeeInfo.last_name}`,
             value: employeeInfo.id
         }
     })
-    const [role] = connection.query(`SELECT * FROM role`)
+    const role = await connection.query(`SELECT * FROM role`)
     const roleList = role.map(roleInfo => {
         return {
             name: roleInfo.title,
@@ -178,7 +196,68 @@ function updateEmployee() {
         },
     ]).then((answer) => {
         connection.query(`UPDATE employee SET role_id = ? WHERE id = ?`, [answer.role, answer.employee])
-        console.log(`${answer.firstName} ${answer.lastName}'s role has been updated!`)
+        console.log(`Employee's role has been updated!`)
+        return setTimeout(userPrompt, 1500)
+    })
+}
+
+async function deleteDept() {
+    const department = await connection.query(`SELECT * FROM department`)
+    const departmentList = department.map(dept => {
+        return {
+            name: dept.name,
+            value: dept.id
+        }
+    })
+    inquirer.prompt({
+        type: "list",
+        name: "department",
+        message: "Select a department to delete",
+        choices: departmentList
+    }).then((answer) => {
+        connection.query(`DELETE FROM department WHERE id = ?`, answer.department)
+        console.log(`Department has been deleted!`)
+        return setTimeout(userPrompt, 1500)
+    })
+}
+
+async function deleteRole() {
+    const role = await connection.query(`SELECT * FROM role`)
+    const roleList = role.map(roleInfo => {
+        return {
+            name: roleInfo.title,
+            value: roleInfo.id
+        }
+    })
+    inquirer.prompt({
+        type: "list",
+        name: "role",
+        message: "Select a role to delete",
+        choices: roleList
+    }).then((answer) => {
+        connection.query(`DELETE FROM role WHERE id = ?`, answer.role)
+        console.log(`Role has been deleted!`)
+        return setTimeout(userPrompt, 1500)
+    })
+}
+
+async function deleteEmployee() {
+    const employee = await connection.query(`SELECT * FROM employee`)
+    const employeeList = employee.map(employeeInfo => {
+        return {
+            name: `${employeeInfo.first_name} ${employeeInfo.last_name}`,
+            value: employeeInfo.id
+        }
+    })
+    inquirer.prompt({
+        type: "list",
+        name: "employee",
+        message: "Select an employee to delete",
+        choices: employeeList
+    }).then((answer) => {
+        connection.query(`DELETE FROM employee WHERE id = ?`, answer.employee)
+        console.log(`Employee has been deleted!`)
+        return setTimeout(userPrompt, 1500)
     })
 }
 
